@@ -1,0 +1,4 @@
+# Manifestes et configs toujours en LF (exécutés sur Linux)
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.sh   text eol=lf
