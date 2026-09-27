@@ -1,0 +1,11 @@
+# Fichiers locaux (non publics)
+CLAUDE.md
+progress.md
+memo
+
+# IDE
+.idea/
+
+# Secrets / env
+.env
+*.env
