@@ -5,6 +5,8 @@ metadata:
   namespace: pipeline
   labels:
     app: dashboard
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: pipeline-dashboard-inflight@kubernetescrd,pipeline-dashboard-ratelimit@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:

@@ -5,6 +5,8 @@ metadata:
   namespace: pipeline
   labels:
     app: api
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: pipeline-api-inflight@kubernetescrd,pipeline-api-ratelimit@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:

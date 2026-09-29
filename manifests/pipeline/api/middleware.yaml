@@ -1,0 +1,27 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-inflight
+  namespace: pipeline
+  labels:
+    app: api
+spec:
+  inFlightReq:
+    amount: 5
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-IP
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-ratelimit
+  namespace: pipeline
+  labels:
+    app: api
+spec:
+  rateLimit:
+    average: 10
+    period: 1s
+    burst: 20
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-IP
