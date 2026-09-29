@@ -21,4 +21,11 @@ data:
         service: http://traefik.kube-system.svc.cluster.local:80
       - hostname: dashboard.yn-tech.fr
         service: http://traefik.kube-system.svc.cluster.local:80
+      - hostname: yn-tech.fr
+        service: http://traefik.kube-system.svc.cluster.local:80
+      # Redirected to the root by a Cloudflare Redirect Rule before reaching
+      # the tunnel. Routed anyway so a missing rule shows as Traefik's 404,
+      # not a tunnel error.
+      - hostname: www.yn-tech.fr
+        service: http://traefik.kube-system.svc.cluster.local:80
       - service: http_status:404
