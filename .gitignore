@@ -10,3 +10,7 @@ memo
 .env
 *.env
 secret.yaml
+
+# Cloudflare tunnel credentials / origin cert
+*.json
+cert.pem

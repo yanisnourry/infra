@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: cloudflared
+  labels:
+    app: cloudflared
+data:
+  # Locally-managed tunnel: routing lives here, versioned, not in the
+  # Cloudflare dashboard. The tunnel UUID is an identifier, not a secret;
+  # the credentials that prove ownership are in the cloudflared-credentials Secret.
+  config.yaml: |
+    tunnel: fb2dd20f-b979-4b30-bc06-95c23b987939
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    ingress:
+      # Every hostname goes to Traefik, which routes on the Host header
+      # (kept as-is by cloudflared) through the Ingress objects.
+      - hostname: api.yn-tech.fr
+        service: http://traefik.kube-system.svc.cluster.local:80
+      - hostname: dashboard.yn-tech.fr
+        service: http://traefik.kube-system.svc.cluster.local:80
+      - service: http_status:404
