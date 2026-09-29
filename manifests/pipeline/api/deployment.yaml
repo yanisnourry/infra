@@ -28,7 +28,7 @@ spec:
             - "until pg_isready -h timescaledb -p 5432; do sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/yanisnourry/market-data-pipeline:d0b58856fe32adbf071f25a506f414be9d0706e9
+          image: ghcr.io/yanisnourry/market-data-pipeline:09efb3fd584be213b0bac269b66abd2dbe4c3f8b
           command:
             - uvicorn
             - api.main:app
