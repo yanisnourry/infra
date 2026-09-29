@@ -1,0 +1,29 @@
+image:
+  repository: ghcr.io/yanisnourry/backtester-service
+  # Pinned to a CI-built commit sha, never "latest". Public image: no pull secret.
+  tag: b0ce774e479de0c2cb12e51895b3aa86dd2ea904
+
+# No replicas value on purpose: pinned to 1 in the Deployment. The last result
+# lives in the process memory, so a second pod would serve a different result
+# and double the load on the pipeline api. Not a tuning knob.
+
+# Non-sensitive settings, injected via envFrom. The service has no credentials,
+# so there is no Secret.
+config:
+  PIPELINE_URL: "http://api.pipeline.svc.cluster.local:8000"
+  SYMBOL: "BTCUSDT"
+  TIMEFRAME: "1h"
+  LOOKBACK_DAYS: "30"
+  SMA_FAST: "10"
+  SMA_SLOW: "30"
+  REFRESH_INTERVAL_SECONDS: "3600"
+  REQUEST_TIMEOUT_SECONDS: "10"
+  LOG_LEVEL: "INFO"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

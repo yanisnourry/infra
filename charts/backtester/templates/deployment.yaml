@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backtester
+  labels:
+    app: backtester
+    {{- include "backtester.labels" . | nindent 4 }}
+spec:
+  # Results live in the process memory: more than one pod (including during a
+  # rolling update) would serve two different results and double the calls to
+  # the pipeline api.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: backtester
+  template:
+    metadata:
+      labels:
+        app: backtester
+      annotations:
+        # envFrom is only read at pod start: roll the pod when the config changes.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      # The app never calls the Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      # No initContainer waiting for the pipeline: a failed refresh is logged
+      # and the last valid result is kept, so the pod starts on its own.
+      containers:
+        - name: backtester
+          image: {{ include "backtester.image" . }}
+          # No command: the image's CMD already runs uvicorn.
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: backtester-settings
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # /health is always 200 and reports staleness in its body; /results
+          # returns 503 until the first successful refresh and must never be a
+          # probe (the pod would flap at startup or during a pipeline outage).
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
