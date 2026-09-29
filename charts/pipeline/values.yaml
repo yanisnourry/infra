@@ -2,7 +2,7 @@
 image:
   repository: ghcr.io/yanisnourry/market-data-pipeline
   # Pinned to a CI-built commit sha, never "latest".
-  tag: 09efb3fd584be213b0bac269b66abd2dbe4c3f8b
+  tag: 8a6c7c71e121d1893b2bcdd8fd456838a88e38cc
 
 # Credentials are not managed by the chart (the repo is public): the Secret is
 # created by hand, see secret.example.yaml, and referenced by name.
