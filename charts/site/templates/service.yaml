@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: site
+  labels:
+    app: site
+    {{- include "site.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: site
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

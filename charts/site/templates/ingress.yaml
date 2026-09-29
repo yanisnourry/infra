@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: site-ingress
+  labels:
+    app: site
+    {{- include "site.labels" . | nindent 4 }}
+  annotations:
+    # In-flight first: a client already holding too many open connections is
+    # refused before it spends its rate-limit quota.
+    traefik.ingress.kubernetes.io/router.middlewares: {{ include "site.middlewareRef" (dict "root" $ "name" "site-inflight") }},{{ include "site.middlewareRef" (dict "root" $ "name" "site-ratelimit") }}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: site
+                port:
+                  number: 8000
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: site-inflight
+  labels:
+    app: site
+    {{- include "site.labels" . | nindent 4 }}
+spec:
+  inFlightReq:
+    amount: {{ .Values.inFlight }}
+    sourceCriterion:
+      requestHeaderName: {{ .Values.clientIpHeader }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: site-ratelimit
+  labels:
+    app: site
+    {{- include "site.labels" . | nindent 4 }}
+spec:
+  rateLimit:
+    average: {{ .Values.rateLimit.average }}
+    period: {{ .Values.rateLimit.period }}
+    burst: {{ .Values.rateLimit.burst }}
+    sourceCriterion:
+      requestHeaderName: {{ .Values.clientIpHeader }}

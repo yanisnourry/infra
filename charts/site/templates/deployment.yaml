@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: site
+  labels:
+    app: site
+    {{- include "site.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  # Stateless, so a rollout can run old and new side by side: the new pod must
+  # be ready before the old one goes, and the site never drops out.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: site
+  template:
+    metadata:
+      labels:
+        app: site
+    spec:
+      # The app never calls the Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      # No initContainer waiting for the backtester: any error calling it
+      # falls back to a bundled result, so the pages render on their own.
+      containers:
+        - name: site
+          image: {{ include "site.image" . }}
+          # No command: the image's CMD already runs uvicorn.
+          ports:
+            - containerPort: 8000
+              name: http
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # /healthz is always 200 and never calls the backtester: a backtester
+          # outage degrades the backtest section, it must not pull the site.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

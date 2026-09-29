@@ -1,0 +1,36 @@
+image:
+  repository: ghcr.io/yanisnourry/portfolio-site
+  # Pinned to a CI-built commit sha, never "latest". Public image: no pull secret.
+  tag: 008fe2ac23e249b3f79860624ac5b4570b8ee487
+
+# Stateless: every request is rendered from the backtester's /results (or the
+# bundled fallback), nothing is kept between requests. One replica is enough
+# for now; raising it is safe, unlike the pipeline api or the backtester.
+replicas: 1
+
+# No ConfigMap: the defaults in the image's app/config.py are the production
+# values (backtester URL in the backtester namespace, 2s timeout, contact
+# address, https://yn-tech.fr as canonical origin). Add one only to override.
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 192Mi
+
+host: yn-tech.fr
+# www.yn-tech.fr is redirected to the root by a Cloudflare Redirect Rule, at
+# the edge: it never reaches the cluster, so it has no Ingress here.
+
+# Same limits as the dashboard: a page view also loads css, favicon and images.
+rateLimit:
+  average: 20
+  period: 1s
+  burst: 100
+inFlight: 30
+
+# Traefik reads the real client IP from this header: all public traffic comes
+# through the Cloudflare tunnel, so the connection source is always cloudflared.
+clientIpHeader: Cf-Connecting-IP
