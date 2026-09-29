@@ -1,0 +1,3 @@
+# Never package credentials or their template into the chart.
+secret.yaml
+secret.example.yaml

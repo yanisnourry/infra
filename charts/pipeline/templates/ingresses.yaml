@@ -1,0 +1,57 @@
+{{- range $component := list "api" "dashboard" }}
+{{- $cfg := index $.Values $component }}
+{{- $port := ternary 8000 8501 (eq $component "api") }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $component }}-ingress
+  labels:
+    app: {{ $component }}
+    {{- include "pipeline.labels" $ | nindent 4 }}
+  annotations:
+    # In-flight first: a client already holding too many open connections is
+    # refused before it spends its rate-limit quota.
+    traefik.ingress.kubernetes.io/router.middlewares: {{ include "pipeline.middlewareRef" (dict "root" $ "name" (printf "%s-inflight" $component)) }},{{ include "pipeline.middlewareRef" (dict "root" $ "name" (printf "%s-ratelimit" $component)) }}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ $cfg.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $component }}
+                port:
+                  number: {{ $port }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $component }}-inflight
+  labels:
+    app: {{ $component }}
+    {{- include "pipeline.labels" $ | nindent 4 }}
+spec:
+  inFlightReq:
+    amount: {{ $cfg.inFlight }}
+    sourceCriterion:
+      requestHeaderName: {{ $.Values.clientIpHeader }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $component }}-ratelimit
+  labels:
+    app: {{ $component }}
+    {{- include "pipeline.labels" $ | nindent 4 }}
+spec:
+  rateLimit:
+    average: {{ $cfg.rateLimit.average }}
+    period: {{ $cfg.rateLimit.period }}
+    burst: {{ $cfg.rateLimit.burst }}
+    sourceCriterion:
+      requestHeaderName: {{ $.Values.clientIpHeader }}
+{{- end }}

@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db
+  labels:
+    app: init-db
+    {{- include "pipeline.labels" . | nindent 4 }}
+  annotations:
+    # A Job's pod template is immutable, so a plain templated Job would make
+    # every upgrade with a new image fail. As a hook it is recreated on each
+    # install/upgrade instead; init_db.py is idempotent, so rerunning is safe.
+    # post-* and not pre-*: the database it waits for is part of this chart.
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  activeDeadlineSeconds: {{ .Values.initJob.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        app: init-db
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: {{ .Values.timescaledb.image }}
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h timescaledb -p 5432; do sleep 2; done"
+      containers:
+      - name: init-db
+        image: {{ include "pipeline.image" . }}
+        command:
+          - python
+          - init_db.py
+        envFrom:
+          - configMapRef:
+              name: pipeline-settings
+          - secretRef:
+              name: {{ .Values.existingSecret }}
+        resources:
+          {{- toYaml .Values.initJob.resources | nindent 10 }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: pipeline
+description: Market data pipeline (TimescaleDB, Redis, FastAPI ingestion API, Streamlit dashboard)
+type: application
+version: 0.1.0
+appVersion: "09efb3f"

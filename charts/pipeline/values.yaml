@@ -1,0 +1,82 @@
+# Image shared by the api, the dashboard and the init Job.
+image:
+  repository: ghcr.io/yanisnourry/market-data-pipeline
+  # Pinned to a CI-built commit sha, never "latest".
+  tag: 09efb3fd584be213b0bac269b66abd2dbe4c3f8b
+
+# Credentials are not managed by the chart (the repo is public): the Secret is
+# created by hand, see secret.example.yaml, and referenced by name.
+existingSecret: pipeline-credentials
+
+# Non-sensitive settings, injected into the api and the init Job via envFrom.
+config:
+  DB_NAME: "market_data"
+  DB_HOST: "timescaledb"
+  DB_PORT: "5432"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_TTL_SECONDS: "60"
+  BINANCE_BASE_URL: "https://api.binance.com"
+  BINANCE_MAX_CANDLES_PER_REQUEST: "1000"
+  BINANCE_RATE_LIMIT_PER_MINUTE: "1200"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
+
+timescaledb:
+  image: timescale/timescaledb:2.30.1-pg16
+  storageClassName: local-path
+  storage: 5Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+redis:
+  image: redis:7-alpine
+
+initJob:
+  activeDeadlineSeconds: 300
+  resources:
+    requests:
+      cpu: 250m
+      memory: 500Mi
+    limits:
+      cpu: 250m
+      memory: 500Mi
+
+api:
+  host: api.yn-tech.fr
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  rateLimit:
+    average: 10
+    period: 1s
+    burst: 20
+  inFlight: 5
+
+dashboard:
+  host: dashboard.yn-tech.fr
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  rateLimit:
+    average: 20
+    period: 1s
+    burst: 100
+  inFlight: 30
+
+# Traefik reads the real client IP from this header: all public traffic comes
+# through the Cloudflare tunnel, so the connection source is always cloudflared.
+clientIpHeader: Cf-Connecting-IP

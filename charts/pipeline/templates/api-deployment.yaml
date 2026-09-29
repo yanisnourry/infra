@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+    {{- include "pipeline.labels" . | nindent 4 }}
+spec:
+  # The ingestion scheduler runs inside the api process: more than one pod
+  # (including during a rolling update) would ingest every candle twice.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: {{ .Values.timescaledb.image }}
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h timescaledb -p 5432; do sleep 2; done"
+      containers:
+        - name: api
+          image: {{ include "pipeline.image" . }}
+          command:
+            - uvicorn
+            - api.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: pipeline-settings
+            - secretRef:
+                name: {{ .Values.existingSecret }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          # TCP only: restarting the api would not fix a db/redis outage and
+          # would restart the scheduler, so dependencies stay out of liveness.
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
