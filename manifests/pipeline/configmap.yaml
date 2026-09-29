@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: pipeline
+  name: pipeline-settings
+data:
+  DB_NAME: "market_data"
+  DB_HOST: "timescaledb"
+  DB_PORT: "5432"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_TTL_SECONDS: "60"
+  BINANCE_BASE_URL: "https://api.binance.com"
+  BINANCE_MAX_CANDLES_PER_REQUEST: "1000"
+  BINANCE_RATE_LIMIT_PER_MINUTE: "1200"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
