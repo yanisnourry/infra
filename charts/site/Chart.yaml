@@ -3,4 +3,4 @@ name: site
 description: Portfolio website (server-rendered FastAPI, live backtest read from backtester-service)
 type: application
 version: 0.1.0
-appVersion: "008fe2a"
+appVersion: "26ca7d0"

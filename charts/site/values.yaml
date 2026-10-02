@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/yanisnourry/portfolio-site
   # Pinned to a CI-built commit sha, never "latest". Public image: no pull secret.
-  tag: 008fe2ac23e249b3f79860624ac5b4570b8ee487
+  tag: 26ca7d01f2689e152a588df2e48d3901097a88d5
 
 # Stateless: every request is rendered from the backtester's /results (or the
 # bundled fallback), nothing is kept between requests. One replica is enough
